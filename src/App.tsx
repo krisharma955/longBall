@@ -1,72 +1,119 @@
 import { useState, useEffect, useCallback } from "react";
-import { leagues as initialLeagues, matches as initialMatches } from "./data/matches";
 import type { Match, League } from "./types/football";
-import { fetchLiveFootballData } from "./services/footballApi";
+import {
+  fetchLiveFootballData,
+  fetchRealMatchSummary,
+  OFFICIAL_LEAGUES,
+  type DateFilterTab,
+} from "./services/footballApi";
 import { Header } from "./components/Header";
-import { FilterTabs, type FilterTab } from "./components/FilterTabs";
+import { DateNav } from "./components/DateNav";
 import { MatchFeed } from "./components/MatchFeed";
 import { EmptyState } from "./components/EmptyState";
 import { MatchDetailsPanel } from "./components/MatchDetailsPanel";
 
+const initialLeagues: League[] = OFFICIAL_LEAGUES.map((l) => ({
+  id: l.id,
+  name: l.name,
+  country: l.country,
+  logo: l.logo,
+  pinned: l.pinned,
+}));
+
 const App = () => {
-  const [leaguesList, setLeaguesList] = useState<League[]>(initialLeagues);
-  const [matchesList, setMatchesList] = useState<Match[]>(initialMatches);
-  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [leaguesList] = useState<League[]>(initialLeagues);
+  const [matchesList, setMatchesList] = useState<Match[]>([]);
+  const [activeDateTab, setActiveDateTab] = useState<DateFilterTab>("today");
+  const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isLiveSource, setIsLiveSource] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-  // Real-time football data fetcher
-  const loadData = useCallback(async (isManual = false) => {
+  // Fetch real matches for selected date
+  const loadData = useCallback(async (dateTab: DateFilterTab, isManual = false) => {
     if (isManual) setIsRefreshing(true);
     try {
-      const data = await fetchLiveFootballData();
-      if (data.matches.length > 0) {
-        setMatchesList(data.matches);
-        setLeaguesList(data.leagues);
-        setIsLiveSource(data.isLiveSource);
-      }
+      const data = await fetchLiveFootballData(dateTab);
+      setMatchesList(data.matches);
     } catch (err) {
-      console.warn("Error refreshing live data:", err);
+      console.warn("Error refreshing real-time data:", err);
     } finally {
+      setIsLoading(false);
       if (isManual) {
-        setTimeout(() => setIsRefreshing(false), 500);
+        setTimeout(() => setIsRefreshing(false), 450);
       }
     }
   }, []);
 
-  // Initial load
+  // Fetch when activeDateTab changes
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    setIsLoading(true);
+    loadData(activeDateTab);
+  }, [activeDateTab, loadData]);
 
-  // Periodic polling for live scores every 60 seconds
+  // Periodic polling every 45s for live scores
   useEffect(() => {
+    if (activeDateTab !== "today") return;
     const interval = setInterval(() => {
-      loadData(false);
-    }, 60000);
+      loadData("today", false);
+    }, 45000);
     return () => clearInterval(interval);
-  }, [loadData]);
+  }, [activeDateTab, loadData]);
 
   const handleRefresh = () => {
-    loadData(true);
+    loadData(activeDateTab, true);
   };
 
-  const handleTogglePin = (leagueId: string) => {
-    setLeaguesList((prev) =>
-      prev.map((l) => (l.id === leagueId ? { ...l, pinned: !l.pinned } : l))
-    );
+  const handleToggleFavorite = (matchId: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(matchId)) {
+        next.delete(matchId);
+      } else {
+        next.add(matchId);
+      }
+      return next;
+    });
   };
 
-  // Keep selectedMatch updated with the latest live score if open
+  // When clicking on a match, open in-sidebar drilldown and fetch real summary
+  const handleSelectMatch = async (match: Match) => {
+    setSelectedMatch(match);
+    try {
+      const summary = await fetchRealMatchSummary(match.id, match.leagueId);
+      setSelectedMatch((prev) => {
+        if (!prev || prev.id !== match.id) return prev;
+        return {
+          ...prev,
+          stats: summary.stats || prev.stats,
+          lineups: summary.lineups || prev.lineups,
+          referee: summary.referee || prev.referee,
+          venue: summary.venue || prev.venue,
+        };
+      });
+    } catch (err) {
+      console.warn("Could not load match details:", err);
+    }
+  };
+
+  // Keep selectedMatch updated with real-time score changes
   const activeSelectedMatch = selectedMatch
-    ? matchesList.find((m) => m.id === selectedMatch.id) || selectedMatch
+    ? {
+        ...selectedMatch,
+        ...(matchesList.find((m) => m.id === selectedMatch.id) || {}),
+      }
     : null;
 
-  // Filter matches by tab & search query
+  // Filter matches by search query and favorites filter
   const filteredMatches = matchesList.filter((match) => {
     const league = leaguesList.find((l) => l.id === match.leagueId);
+
+    // Favorites only toggle
+    if (showOnlyFavorites && !favorites.has(match.id)) {
+      return false;
+    }
 
     // Search query filter
     if (searchQuery.trim()) {
@@ -80,32 +127,15 @@ const App = () => {
       if (!matchesSearch) return false;
     }
 
-    // Active tab filter
-    if (activeTab === "all") return true;
-    if (activeTab === "live") {
-      return match.status === "LIVE" || match.status === "HALFTIME";
-    }
-    if (activeTab === "finished") return match.status === "FINISHED";
-    if (activeTab === "upcoming") return match.status === "UPCOMING";
-    if (activeTab === "pinned") {
-      return league?.pinned === true;
-    }
     return true;
   });
 
-  const counts = {
-    all: matchesList.length,
-    live: matchesList.filter((m) => m.status === "LIVE" || m.status === "HALFTIME").length,
-    finished: matchesList.filter((m) => m.status === "FINISHED").length,
-    upcoming: matchesList.filter((m) => m.status === "UPCOMING").length,
-    pinned: matchesList.filter((m) => {
-      const l = leaguesList.find((league) => league.id === m.leagueId);
-      return l?.pinned === true;
-    }).length,
-  };
+  const liveCount = matchesList.filter(
+    (m) => m.status === "LIVE" || m.status === "HALFTIME"
+  ).length;
 
   return (
-    <main className="w-full max-w-md mx-auto h-screen bg-[#0C0E12] text-[#E2E8F0] flex flex-col overflow-hidden font-sans border-x border-[#1A202C] shadow-2xl relative select-none">
+    <main className="w-full h-screen bg-[#050606] text-[#F5F6F6] flex flex-col overflow-hidden font-sans relative select-none">
       {activeSelectedMatch ? (
         <MatchDetailsPanel
           match={activeSelectedMatch}
@@ -114,30 +144,46 @@ const App = () => {
         />
       ) : (
         <>
-          {/* Top Header */}
+          {/* Header */}
           <Header
-            liveCount={counts.live}
+            liveCount={liveCount}
+            favoritesCount={favorites.size}
+            showOnlyFavorites={showOnlyFavorites}
+            onToggleFavoritesOnly={() => setShowOnlyFavorites((p) => !p)}
             isRefreshing={isRefreshing}
-            isLiveSource={isLiveSource}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onRefresh={handleRefresh}
           />
 
-          {/* Filter Tabs */}
-          <FilterTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            counts={counts}
+          {/* 3-Way Segmented Date Navigation */}
+          <DateNav
+            activeDate={activeDateTab}
+            onDateChange={setActiveDateTab}
           />
 
-          {/* Main Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-3 pb-3 scrollbar-thin scrollbar-thumb-[#1F2634] scrollbar-track-transparent">
-            {filteredMatches.length === 0 ? (
+          {/* Main Scrollable Feed */}
+          <div className="flex-1 overflow-y-auto px-3.5 pb-4 scrollbar-thin">
+            {isLoading ? (
+              // Clean Loading Skeletons
+              <div className="flex flex-col gap-2.5 pt-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="h-24 rounded-[20px] bg-[#171919] border border-[rgba(255,255,255,0.06)] animate-pulse flex items-center px-4 justify-between"
+                  >
+                    <div className="w-12 h-12 bg-[#252727] rounded-full" />
+                    <div className="w-16 h-7 bg-[#252727] rounded" />
+                    <div className="w-12 h-12 bg-[#252727] rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredMatches.length === 0 ? (
               <EmptyState
-                filter={activeTab}
+                filter={activeDateTab === "upcoming" ? "upcoming" : activeDateTab === "yesterday" ? "finished" : "all"}
                 onReset={() => {
-                  setActiveTab("all");
+                  setActiveDateTab("today");
+                  setShowOnlyFavorites(false);
                   setSearchQuery("");
                 }}
               />
@@ -145,8 +191,9 @@ const App = () => {
               <MatchFeed
                 matches={filteredMatches}
                 leagues={leaguesList}
-                onSelectMatch={(m) => setSelectedMatch(m)}
-                onTogglePinLeague={handleTogglePin}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                onSelectMatch={handleSelectMatch}
               />
             )}
           </div>

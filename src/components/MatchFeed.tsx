@@ -1,102 +1,120 @@
-import React from "react";
+import React, { useState } from "react";
 import type { Match, League } from "../types/football";
 import { MatchCard } from "./MatchCard";
 
 interface MatchFeedProps {
   matches: Match[];
   leagues: League[];
+  favorites: Set<string>;
+  onToggleFavorite: (matchId: string) => void;
   onSelectMatch: (match: Match) => void;
-  onTogglePinLeague: (leagueId: string) => void;
 }
 
 export const MatchFeed: React.FC<MatchFeedProps> = ({
   matches,
   leagues,
+  favorites,
+  onToggleFavorite,
   onSelectMatch,
-  onTogglePinLeague,
 }) => {
-  // Group matches by league
-  const groupedMatches = leagues
-    .map((league) => {
-      const leagueMatches = matches.filter((m) => m.leagueId === league.id);
-      return {
-        league,
-        matches: leagueMatches,
-      };
-    })
-    .filter((group) => group.matches.length > 0);
+  const [upcomingExpanded, setUpcomingExpanded] = useState(true);
+
+  // Partition matches into Live, Upcoming, and Finished
+  const liveMatches = matches.filter((m) => m.status === "LIVE" || m.status === "HALFTIME");
+  const upcomingMatches = matches.filter((m) => m.status === "UPCOMING");
+  const finishedMatches = matches.filter((m) => m.status === "FINISHED" || m.status === "POSTPONED" || m.status === "CANCELLED");
 
   return (
-    <div className="flex flex-col gap-3.5 pt-1">
-      {groupedMatches.map(({ league, matches }) => (
-        <section key={league.id} className="flex flex-col">
-          {/* League Section Header */}
-          <div className="flex items-center justify-between px-1 py-1.5 mb-1.5 text-xs text-[#94A3B8] font-medium border-b border-[#181E29]">
-            <div className="flex items-center gap-2 min-w-0">
-              {league.logo ? (
-                <img
-                  src={league.logo}
-                  alt={league.name}
-                  className="w-4 h-4 object-contain shrink-0"
-                />
-              ) : (
-                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-              )}
-              <span className="font-bold text-white tracking-tight truncate text-[11px]">
-                {league.name}
-              </span>
-              <span className="text-[10px] text-[#475569] hidden xs:inline">
-                • {league.country}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-[#64748B] px-1.5 py-0.2 rounded bg-[#131720]">
-                {matches.length}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTogglePinLeague(league.id);
-                }}
-                className={`p-1 rounded transition-colors ${
-                  league.pinned
-                    ? "text-amber-400 hover:text-amber-300"
-                    : "text-[#475569] hover:text-[#94A3B8]"
-                }`}
-                title={league.pinned ? "Unpin league" : "Pin league"}
-                aria-label={league.pinned ? "Unpin league" : "Pin league"}
-              >
-                <svg
-                  className="w-3.5 h-3.5"
-                  viewBox="0 0 24 24"
-                  fill={league.pinned ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="17" x2="12" y2="22" />
-                  <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
-                </svg>
-              </button>
-            </div>
+    <div className="flex flex-col gap-3 pt-1">
+      {/* 1. Live Matches Section */}
+      {liveMatches.length > 0 && (
+        <section className="flex flex-col">
+          <div className="flex items-center justify-between px-1 mb-2">
+            <span className="text-[11px] font-bold text-[#18B86A] uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#18B86A] animate-pulse" />
+              Live Now ({liveMatches.length})
+            </span>
           </div>
-
-          {/* Match cards */}
-          <div className="flex flex-col">
-            {matches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                league={league}
-                onClick={onSelectMatch}
-              />
-            ))}
-          </div>
+          {liveMatches.map((match) => (
+            <MatchCard
+              key={match.id}
+              match={match}
+              league={leagues.find((l) => l.id === match.leagueId)}
+              isFavorite={favorites.has(match.id)}
+              onToggleFavorite={onToggleFavorite}
+              onClick={onSelectMatch}
+            />
+          ))}
         </section>
-      ))}
+      )}
+
+      {/* 2. Upcoming / Later Today Section (Collapsible with chevron) */}
+      {upcomingMatches.length > 0 && (
+        <section className="flex flex-col">
+          <button
+            type="button"
+            onClick={() => setUpcomingExpanded((prev) => !prev)}
+            className="flex items-center justify-between px-1 mb-2 text-left w-full group py-1"
+            aria-label={upcomingExpanded ? "Show fewer upcoming matches" : "Show more upcoming matches"}
+          >
+            <span className="text-[11px] font-bold text-[#A2A7A7] uppercase tracking-wider group-hover:text-white transition-colors">
+              Later Today ({upcomingMatches.length})
+            </span>
+            <div className="flex items-center gap-1 text-[#727878] group-hover:text-white transition-colors text-xs">
+              <span className="text-[10px] font-medium">
+                {upcomingExpanded ? "Hide" : "Show all"}
+              </span>
+              <svg
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${upcomingExpanded ? "rotate-180" : ""}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </button>
+
+          {upcomingExpanded && (
+            <div className="flex flex-col animate-in fade-in duration-150">
+              {upcomingMatches.map((match) => (
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  league={leagues.find((l) => l.id === match.leagueId)}
+                  isFavorite={favorites.has(match.id)}
+                  onToggleFavorite={onToggleFavorite}
+                  onClick={onSelectMatch}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 3. Finished Matches Section */}
+      {finishedMatches.length > 0 && (
+        <section className="flex flex-col">
+          <div className="flex items-center justify-between px-1 mb-2">
+            <span className="text-[11px] font-bold text-[#727878] uppercase tracking-wider">
+              Recent Results ({finishedMatches.length})
+            </span>
+          </div>
+          {finishedMatches.map((match) => (
+            <MatchCard
+              key={match.id}
+              match={match}
+              league={leagues.find((l) => l.id === match.leagueId)}
+              isFavorite={favorites.has(match.id)}
+              onToggleFavorite={onToggleFavorite}
+              onClick={onSelectMatch}
+            />
+          ))}
+        </section>
+      )}
     </div>
   );
 };

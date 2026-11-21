@@ -74,6 +74,7 @@ export interface Match {
   minute: number | null;
   kickoffTime?: string;
   date?: string;
+  rawDate?: string;
   venue?: string;
   referee?: string;
   round?: string;
@@ -85,6 +86,7 @@ export interface Match {
     away: Lineup;
   };
   leagueId: string;
+  isFavorite?: boolean;
 }
 
 export interface League {

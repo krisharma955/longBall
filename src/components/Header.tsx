@@ -2,8 +2,10 @@ import React, { useState } from "react";
 
 interface HeaderProps {
   liveCount: number;
+  favoritesCount: number;
+  showOnlyFavorites: boolean;
+  onToggleFavoritesOnly: () => void;
   isRefreshing: boolean;
-  isLiveSource: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
@@ -11,8 +13,10 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   liveCount,
+  favoritesCount,
+  showOnlyFavorites,
+  onToggleFavoritesOnly,
   isRefreshing,
-  isLiveSource,
   searchQuery,
   onSearchChange,
   onRefresh,
@@ -20,17 +24,17 @@ export const Header: React.FC<HeaderProps> = ({
   const [showSearch, setShowSearch] = useState(false);
 
   return (
-    <header className="px-3.5 py-2.5 border-b border-[#1A202C] bg-[#0C0E12]/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-2">
+    <header className="px-3.5 py-3 bg-gradient-to-b from-[#075B32]/25 via-[#050606] to-[#050606] border-b border-[rgba(255,255,255,0.06)] sticky top-0 z-20 flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        {/* Brand & Sync Indicator */}
+        {/* Brand */}
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
+          <div className="w-7 h-7 rounded-lg bg-[#171919] border border-[rgba(255,255,255,0.08)] flex items-center justify-center shadow-inner">
             <svg
-              className="w-4 h-4 text-white"
+              className="w-4 h-4 text-[#18B86A]"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2.3"
+              strokeWidth="2.2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -45,41 +49,61 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-sm font-bold tracking-tight text-white leading-none">
-                longBall<span className="text-blue-500">.</span>
+              <h1 className="text-base font-bold tracking-tight text-[#F5F6F6] leading-none">
+                longBall<span className="text-[#18B86A]">.</span>
               </h1>
               {liveCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#18B86A]/15 text-[#18B86A] border border-[#18B86A]/25">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#18B86A] animate-pulse" />
                   {liveCount} LIVE
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <span className="text-[10px] text-[#64748B] font-medium">
-                {isLiveSource ? "ESPN Realtime" : "Match Companion"}
-              </span>
-              {isLiveSource && (
-                <span className="w-1 h-1 rounded-full bg-emerald-500" />
-              )}
-            </div>
+            <p className="text-[10px] text-[#727878] font-medium mt-0.5">
+              Live Scores & Hub
+            </p>
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Header Controls */}
         <div className="flex items-center gap-1">
+          {/* Favorites Filter */}
+          <button
+            onClick={onToggleFavoritesOnly}
+            aria-label="Filter favorites"
+            className={`h-7 px-2 rounded-lg flex items-center gap-1.5 text-xs font-semibold transition-all ${
+              showOnlyFavorites
+                ? "bg-[#18B86A]/20 text-[#18B86A] border border-[#18B86A]/30"
+                : "text-[#A2A7A7] hover:text-white hover:bg-[#171919]"
+            }`}
+            title="My Favorites"
+          >
+            <svg
+              className={`w-3.5 h-3.5 ${showOnlyFavorites ? "fill-[#18B86A]" : "fill-none"}`}
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+            </svg>
+            {favoritesCount > 0 && <span>{favoritesCount}</span>}
+          </button>
+
+          {/* Search Toggle */}
           <button
             onClick={() => {
               setShowSearch((prev) => !prev);
               if (showSearch) onSearchChange("");
             }}
             aria-label="Search fixtures"
-            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
               showSearch || searchQuery
-                ? "bg-blue-600/20 text-blue-400"
-                : "text-[#94A3B8] hover:text-white hover:bg-[#161C26]"
+                ? "bg-[#252727] text-white"
+                : "text-[#A2A7A7] hover:text-white hover:bg-[#171919]"
             }`}
-            title="Search teams or leagues"
+            title="Search clubs or leagues"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -95,15 +119,16 @@ export const Header: React.FC<HeaderProps> = ({
             </svg>
           </button>
 
+          {/* Refresh Scores */}
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            aria-label="Refresh live scores"
-            className="w-7 h-7 rounded-md flex items-center justify-center text-[#94A3B8] hover:text-white hover:bg-[#161C26] active:scale-95 transition-all disabled:opacity-50"
-            title="Refresh live scores"
+            aria-label="Refresh scores"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-[#A2A7A7] hover:text-white hover:bg-[#171919] active:scale-95 transition-all disabled:opacity-50"
+            title="Refresh live data"
           >
             <svg
-              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-400" : ""}`}
+              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#18B86A]" : ""}`}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -120,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Search Input Drawer */}
+      {/* Expandable Search Input */}
       {showSearch && (
         <div className="relative animate-in fade-in duration-150">
           <input
@@ -129,12 +154,12 @@ export const Header: React.FC<HeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             autoFocus
-            className="w-full bg-[#12161F] border border-[#232B39] focus:border-blue-500 rounded-lg px-3 py-1.5 text-xs text-white placeholder-[#64748B] focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+            className="w-full bg-[#171919] border border-[rgba(255,255,255,0.08)] focus:border-[#18B86A]/60 rounded-xl px-3 py-1.5 text-xs text-[#F5F6F6] placeholder-[#727878] focus:outline-none"
           />
           {searchQuery && (
             <button
               onClick={() => onSearchChange("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#64748B] hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#727878] hover:text-white"
             >
               ✕
             </button>

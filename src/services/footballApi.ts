@@ -1,14 +1,71 @@
-import type { Match, League, MatchEvent, MatchStats, Goal, MatchStatus } from "../types/football";
-import { matches as fallbackMatches, leagues as fallbackLeagues } from "../data/matches";
+import type { Match, League, MatchEvent, MatchStats, Goal, MatchStatus, Lineup, Player } from "../types/football";
 
-// ESPN competition league codes
-export const ESPN_LEAGUES = [
-  { espnSlug: "eng.1", id: "pl", name: "Premier League", country: "England", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png" },
-  { espnSlug: "uefa.champions", id: "ucl", name: "Champions League", country: "Europe", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/2.png" },
-  { espnSlug: "esp.1", id: "laliga", name: "La Liga", country: "Spain", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png" },
-  { espnSlug: "ita.1", id: "seriea", name: "Serie A", country: "Italy", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png" },
-  { espnSlug: "ger.1", id: "bundesliga", name: "Bundesliga", country: "Germany", logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/10.png" },
+export interface LeagueConfig {
+  id: string;
+  espnSlug: string;
+  name: string;
+  country: string;
+  logo: string;
+  pinned: boolean;
+}
+
+export const OFFICIAL_LEAGUES: LeagueConfig[] = [
+  {
+    id: "pl",
+    espnSlug: "eng.1",
+    name: "Premier League",
+    country: "England",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png",
+    pinned: true,
+  },
+  {
+    id: "ucl",
+    espnSlug: "uefa.champions",
+    name: "Champions League",
+    country: "Europe",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/2.png",
+    pinned: true,
+  },
+  {
+    id: "laliga",
+    espnSlug: "esp.1",
+    name: "La Liga",
+    country: "Spain",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png",
+    pinned: false,
+  },
+  {
+    id: "seriea",
+    espnSlug: "ita.1",
+    name: "Serie A",
+    country: "Italy",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png",
+    pinned: false,
+  },
+  {
+    id: "bundesliga",
+    espnSlug: "ger.1",
+    name: "Bundesliga",
+    country: "Germany",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/10.png",
+    pinned: false,
+  },
 ];
+
+export type DateFilterTab = "yesterday" | "today" | "upcoming";
+
+function getDateQueryParam(tab: DateFilterTab): string {
+  const d = new Date();
+  if (tab === "yesterday") {
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10).replace(/-/g, "");
+  }
+  if (tab === "upcoming") {
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10).replace(/-/g, "");
+  }
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
 
 interface ESPNCompetitor {
   homeAway: "home" | "away";
@@ -66,7 +123,6 @@ interface ESPNEvent {
   }>;
 }
 
-// Convert ESPN event into our Match model
 function parseESPNEvent(event: ESPNEvent, leagueId: string): Match | null {
   const comp = event.competitions?.[0];
   if (!comp || comp.competitors.length < 2) return null;
@@ -99,7 +155,7 @@ function parseESPNEvent(event: ESPNEvent, leagueId: string): Match | null {
     if (!isNaN(parsed)) minute = parsed;
   }
 
-  // Parse Kickoff Time
+  // Parse kickoff time
   let kickoffTime = "";
   if (event.date) {
     try {
@@ -113,14 +169,14 @@ function parseESPNEvent(event: ESPNEvent, leagueId: string): Match | null {
   const homeScore = parseInt(homeComp.score || "0", 10) || 0;
   const awayScore = parseInt(awayComp.score || "0", 10) || 0;
 
-  // Parse events (goals, cards, subs)
+  // Real events from ESPN details
   const events: MatchEvent[] = [];
   const goals: Goal[] = [];
 
   if (comp.details && Array.isArray(comp.details)) {
     comp.details.forEach((d, idx) => {
       const eventMin = parseInt((d.clock?.displayValue || "0").replace(/[^0-9]/g, ""), 10) || 0;
-      const teamId = d.team?.id === homeComp.team.id ? "home" : "away";
+      const teamId = d.team?.id === homeComp.team.id ? homeComp.team.id : awayComp.team.id;
       const athlete = d.athletesInvolved?.[0];
       const assistAthlete = d.athletesInvolved?.[1];
 
@@ -165,26 +221,8 @@ function parseESPNEvent(event: ESPNEvent, leagueId: string): Match | null {
     });
   }
 
-  // Synthesize realistic match stats based on score and status if not provided by endpoint
-  let stats: MatchStats | undefined;
-  if (status === "LIVE" || status === "HALFTIME" || status === "FINISHED") {
-    const homePossession = 48 + ((homeScore - awayScore) * 3) + (homeComp.team.name.length % 7);
-    const clampedPossession = Math.min(68, Math.max(34, homePossession));
-    stats = {
-      possession: [clampedPossession, 100 - clampedPossession],
-      shots: [Math.max(homeScore * 2 + 5, 8), Math.max(awayScore * 2 + 4, 6)],
-      shotsOnTarget: [Math.max(homeScore + 2, 3), Math.max(awayScore + 2, 2)],
-      xg: [parseFloat((homeScore * 0.72 + 0.45).toFixed(2)), parseFloat((awayScore * 0.65 + 0.38).toFixed(2))],
-      corners: [Math.max(homeScore + 3, 4), Math.max(awayScore + 2, 3)],
-      fouls: [9 + (homeScore % 4), 11 + (awayScore % 3)],
-      yellowCards: [1 + (homeScore % 2), 2 + (awayScore % 2)],
-      redCards: [0, 0],
-      passAccuracy: [86, 82],
-    };
-  }
-
   return {
-    id: `espn-${event.id}`,
+    id: event.id,
     homeTeam: {
       id: homeComp.team.id,
       name: homeComp.team.displayName || homeComp.team.name,
@@ -202,78 +240,182 @@ function parseESPNEvent(event: ESPNEvent, leagueId: string): Match | null {
     status,
     minute,
     kickoffTime,
+    rawDate: event.date,
     date: event.date ? new Date(event.date).toLocaleDateString([], { month: "short", day: "numeric" }) : "Today",
     venue: comp.venue?.fullName ? `${comp.venue.fullName}${comp.venue.address?.city ? `, ${comp.venue.address.city}` : ""}` : undefined,
     goals,
     events,
-    stats,
     leagueId,
   };
 }
 
-export async function fetchLiveFootballData(): Promise<{
+// Fetch live football data by date tab
+export async function fetchLiveFootballData(
+  dateTab: DateFilterTab = "today"
+): Promise<{
   matches: Match[];
   leagues: League[];
-  isLiveSource: boolean;
 }> {
-  try {
-    const fetchPromises = ESPN_LEAGUES.map(async (l) => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 6000);
-        const res = await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/${l.espnSlug}/scoreboard`,
-          { signal: controller.signal }
-        );
-        clearTimeout(timeoutId);
+  const dateParam = getDateQueryParam(dateTab);
 
-        if (!res.ok) return [];
-        const data = await res.json();
-        const events: ESPNEvent[] = data.events || [];
-        return events
-          .map((ev) => parseESPNEvent(ev, l.id))
-          .filter((m): m is Match => m !== null);
-      } catch (err) {
-        console.warn(`Failed fetching ESPN feed for ${l.name}:`, err);
-        return [];
-      }
-    });
+  const fetchPromises = OFFICIAL_LEAGUES.map(async (l) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 6500);
 
-    const results = await Promise.all(fetchPromises);
-    const liveMatches = results.flat();
+      // In ESPN API, dates parameter filters to exact date YYYYMMDD
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${l.espnSlug}/scoreboard?dates=${dateParam}`;
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
-    if (liveMatches.length > 0) {
-      // Combine with pinned status from fallback leagues
-      const enrichedLeagues: League[] = ESPN_LEAGUES.map((el) => {
-        const found = fallbackLeagues.find((fl) => fl.id === el.id);
-        return {
-          id: el.id,
-          name: el.name,
-          country: el.country,
-          logo: el.logo,
-          pinned: found ? found.pinned : el.id === "pl" || el.id === "ucl",
-        };
-      });
-
-      // If live matches don't have rich finished/live matches today (e.g. midday lull),
-      // merge with fallback fixtures so the fan always has a complete experience
-      const hasLiveOrFinished = liveMatches.some(m => m.status === "LIVE" || m.status === "FINISHED");
-      const combinedMatches = hasLiveOrFinished ? liveMatches : [...liveMatches, ...fallbackMatches];
-
-      return {
-        matches: combinedMatches,
-        leagues: enrichedLeagues,
-        isLiveSource: true,
-      };
+      if (!res.ok) return [];
+      const data = await res.json();
+      const events: ESPNEvent[] = data.events || [];
+      return events
+        .map((ev) => parseESPNEvent(ev, l.id))
+        .filter((m): m is Match => m !== null);
+    } catch (err) {
+      console.warn(`Could not reach real-time feed for ${l.name}:`, err);
+      return [];
     }
-  } catch (err) {
-    console.error("Error connecting to real-time football feed, using enriched data:", err);
-  }
+  });
 
-  // Graceful fallback to rich authentic mock data
+  const results = await Promise.all(fetchPromises);
+  const realMatches = results.flat();
+
+  // Sort matches: LIVE first, then UPCOMING (sorted by date/time), then FINISHED
+  realMatches.sort((a, b) => {
+    const order = { LIVE: 0, HALFTIME: 1, UPCOMING: 2, FINISHED: 3, POSTPONED: 4, CANCELLED: 5 };
+    return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+  });
+
+  const leagues: League[] = OFFICIAL_LEAGUES.map((l) => ({
+    id: l.id,
+    name: l.name,
+    country: l.country,
+    logo: l.logo,
+    pinned: l.pinned,
+  }));
+
   return {
-    matches: fallbackMatches,
-    leagues: fallbackLeagues,
-    isLiveSource: false,
+    matches: realMatches,
+    leagues,
   };
+}
+
+// Fetch real match details (boxscore stats, rosters/lineups, and official details)
+export async function fetchRealMatchSummary(
+  matchId: string,
+  leagueId: string
+): Promise<{
+  stats?: MatchStats;
+  lineups?: { home: Lineup; away: Lineup };
+  referee?: string;
+  venue?: string;
+}> {
+  const leagueConfig = OFFICIAL_LEAGUES.find((l) => l.id === leagueId) || OFFICIAL_LEAGUES[0];
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
+    const res = await fetch(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueConfig.espnSlug}/summary?event=${matchId}`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+
+    if (!res.ok) return {};
+    const data = await res.json();
+
+    // 1. Real Statistics from ESPN boxscore
+    let stats: MatchStats | undefined;
+    const teamsStats = data.boxscore?.teams;
+    if (teamsStats && Array.isArray(teamsStats) && teamsStats.length >= 2) {
+      const homeStatsArr = teamsStats[0]?.statistics || [];
+      const awayStatsArr = teamsStats[1]?.statistics || [];
+
+      const getStat = (name: string): [number, number] => {
+        const h = homeStatsArr.find((s: { name: string }) => s.name === name);
+        const a = awayStatsArr.find((s: { name: string }) => s.name === name);
+        return [parseFloat(h?.displayValue || "0") || 0, parseFloat(a?.displayValue || "0") || 0];
+      };
+
+      const possession = getStat("possessionPct");
+      const shots = getStat("totalShots");
+      const shotsOnTarget = getStat("shotsOnTarget");
+      const corners = getStat("wonCorners");
+      const fouls = getStat("foulsCommitted");
+      const yellowCards = getStat("yellowCards");
+      const redCards = getStat("redCards");
+      const passPct = getStat("passPct");
+
+      if (possession[0] > 0 || shots[0] > 0 || fouls[0] > 0) {
+        stats = {
+          possession: [Math.round(possession[0]), Math.round(possession[1] || (100 - possession[0]))],
+          shots,
+          shotsOnTarget,
+          corners,
+          fouls,
+          yellowCards,
+          redCards,
+          passAccuracy: [Math.round(passPct[0] > 1 ? passPct[0] : passPct[0] * 100), Math.round(passPct[1] > 1 ? passPct[1] : passPct[1] * 100)],
+        };
+      }
+    }
+
+    // 2. Real Lineups & Rosters
+    let lineups: { home: Lineup; away: Lineup } | undefined;
+    const rosters = data.rosters;
+    if (rosters && Array.isArray(rosters) && rosters.length >= 2) {
+      const parseRoster = (r: { formation?: string; roster?: Array<{ starter?: boolean; athlete?: { id?: string; displayName?: string }; jersey?: string; position?: { name?: string } }> }): Lineup => {
+        const formation = r.formation || "4-3-3";
+        const startingXI: Player[] = [];
+        const bench: Player[] = [];
+
+        (r.roster || []).forEach((item) => {
+          const player: Player = {
+            id: item.athlete?.id || Math.random().toString(),
+            name: item.athlete?.displayName || "Player",
+            number: parseInt(item.jersey || "0", 10) || 0,
+            position: (item.position?.name?.includes("Goalkeeper") ? "GK" : item.position?.name?.includes("Defender") ? "DEF" : item.position?.name?.includes("Midfielder") ? "MID" : "FWD"),
+          };
+          if (item.starter) {
+            startingXI.push(player);
+          } else {
+            bench.push(player);
+          }
+        });
+
+        return {
+          formation,
+          startingXI,
+          bench,
+        };
+      };
+
+      const homeLineup = parseRoster(rosters[0]);
+      const awayLineup = parseRoster(rosters[1]);
+
+      if (homeLineup.startingXI.length > 0 || awayLineup.startingXI.length > 0) {
+        lineups = {
+          home: homeLineup,
+          away: awayLineup,
+        };
+      }
+    }
+
+    // 3. Referee & Venue
+    const officials = data.gameInfo?.officials;
+    const referee = officials && officials.length > 0 ? officials[0]?.displayName : undefined;
+    const venue = data.gameInfo?.venue?.fullName ? `${data.gameInfo.venue.fullName}${data.gameInfo.venue.address?.city ? `, ${data.gameInfo.venue.address.city}` : ""}` : undefined;
+
+    return {
+      stats,
+      lineups,
+      referee,
+      venue,
+    };
+  } catch (err) {
+    console.warn(`Error fetching summary details for match ${matchId}:`, err);
+    return {};
+  }
 }

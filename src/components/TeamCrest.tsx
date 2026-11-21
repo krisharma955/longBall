@@ -20,15 +20,15 @@ export const TeamCrest: React.FC<TeamCrestProps> = ({
   const sizeClasses = {
     xs: "w-4 h-4 text-[9px]",
     sm: "w-5 h-5 text-[10px]",
-    md: "w-7 h-7 text-xs",
-    lg: "w-11 h-11 text-sm",
+    md: "w-9 h-9 text-xs",
+    lg: "w-12 h-12 text-sm",
     xl: "w-14 h-14 text-base",
   }[size];
 
   if (!src || hasError) {
     return (
       <div
-        className={`${sizeClasses} rounded-full bg-[#1A202C] border border-[#293242] flex items-center justify-center font-bold text-[#94A3B8] shrink-0 select-none shadow-sm ${className}`}
+        className={`${sizeClasses} rounded-full bg-[#202222] border border-[rgba(255,255,255,0.08)] flex items-center justify-center font-bold text-[#A2A7A7] shrink-0 select-none shadow-sm ${className}`}
         title={name}
       >
         {shortName.slice(0, 3).toUpperCase()}
