@@ -11,28 +11,28 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ filter, onReset }) => {
     switch (filter) {
       case "live":
         return {
-          title: "No Live Matches Now",
-          description: "Check upcoming fixtures kicking off later today or explore recent results.",
+          title: "No Live Matches Currently",
+          description: "All matches are either upcoming or already finished. Check today's schedule.",
         };
       case "upcoming":
         return {
           title: "No Upcoming Fixtures",
-          description: "No future matches scheduled for today across followed leagues.",
+          description: "There are no further fixtures scheduled for today across followed leagues.",
         };
       case "finished":
         return {
           title: "No Finished Matches",
-          description: "No completed matches found for today yet.",
+          description: "No completed matches found in the selected view.",
         };
       case "pinned":
         return {
           title: "No Pinned League Matches",
-          description: "Pin your favorite leagues to monitor their matches here at a glance.",
+          description: "Pin your favorite leagues using the pin icon to track them here.",
         };
       default:
         return {
           title: "No Matches Found",
-          description: "There are currently no matches scheduled for the selected view.",
+          description: "No fixtures match your current filter or search criteria.",
         };
     }
   };
@@ -40,10 +40,10 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ filter, onReset }) => {
   const { title, description } = getMessage();
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className="w-12 h-12 rounded-2xl bg-[#14181B] border border-[#23292C] flex items-center justify-center text-[#5D676B] mb-3.5">
+    <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
+      <div className="w-11 h-11 rounded-2xl bg-[#121620] border border-[#1E2533] flex items-center justify-center text-[#64748B] mb-3">
         <svg
-          className="w-6 h-6"
+          className="w-5 h-5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -57,15 +57,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ filter, onReset }) => {
         </svg>
       </div>
 
-      <h3 className="text-sm font-semibold text-white mb-1">{title}</h3>
-      <p className="text-xs text-[#7F8A8D] leading-relaxed max-w-[240px] mb-4">
+      <h3 className="text-xs font-bold text-white mb-1">{title}</h3>
+      <p className="text-[11px] text-[#64748B] leading-relaxed max-w-[220px] mb-3.5">
         {description}
       </p>
 
       {filter !== "all" && (
         <button
           onClick={onReset}
-          className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-[#181E21] hover:bg-[#20272B] text-emerald-400 border border-emerald-500/20 transition-colors"
+          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#171D28] hover:bg-[#1E2534] text-blue-400 border border-blue-500/20 transition-colors"
         >
           View All Matches
         </button>

@@ -4,7 +4,7 @@ interface TeamCrestProps {
   src: string;
   name: string;
   shortName: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
@@ -18,15 +18,17 @@ export const TeamCrest: React.FC<TeamCrestProps> = ({
   const [hasError, setHasError] = useState(false);
 
   const sizeClasses = {
-    sm: "w-6 h-6 text-[10px]",
-    md: "w-10 h-10 text-xs",
-    lg: "w-14 h-14 text-sm",
+    xs: "w-4 h-4 text-[9px]",
+    sm: "w-5 h-5 text-[10px]",
+    md: "w-7 h-7 text-xs",
+    lg: "w-11 h-11 text-sm",
+    xl: "w-14 h-14 text-base",
   }[size];
 
   if (!src || hasError) {
     return (
       <div
-        className={`${sizeClasses} rounded-full bg-[#1A1F22] border border-[#272B2D] flex items-center justify-center font-bold text-[#A0AAB0] shrink-0 select-none ${className}`}
+        className={`${sizeClasses} rounded-full bg-[#1A202C] border border-[#293242] flex items-center justify-center font-bold text-[#94A3B8] shrink-0 select-none shadow-sm ${className}`}
         title={name}
       >
         {shortName.slice(0, 3).toUpperCase()}

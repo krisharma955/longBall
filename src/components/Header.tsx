@@ -3,6 +3,7 @@ import React, { useState } from "react";
 interface HeaderProps {
   liveCount: number;
   isRefreshing: boolean;
+  isLiveSource: boolean;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onRefresh: () => void;
@@ -11,6 +12,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   liveCount,
   isRefreshing,
+  isLiveSource,
   searchQuery,
   onSearchChange,
   onRefresh,
@@ -18,16 +20,17 @@ export const Header: React.FC<HeaderProps> = ({
   const [showSearch, setShowSearch] = useState(false);
 
   return (
-    <header className="px-4 py-3 border-b border-[#22272A] bg-[#0E1113]/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-2.5">
+    <header className="px-3.5 py-2.5 border-b border-[#1A202C] bg-[#0C0E12]/95 backdrop-blur-md sticky top-0 z-20 flex flex-col gap-2">
       <div className="flex items-center justify-between">
+        {/* Brand & Sync Indicator */}
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/30 flex items-center justify-center shadow-inner">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shadow-blue-500/20">
             <svg
-              className="w-4 h-4 text-emerald-400"
+              className="w-4 h-4 text-white"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2.2"
+              strokeWidth="2.3"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -42,39 +45,44 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-base font-bold tracking-tight text-white leading-none">
-                longBall<span className="text-emerald-400">.</span>
+              <h1 className="text-sm font-bold tracking-tight text-white leading-none">
+                longBall<span className="text-blue-500">.</span>
               </h1>
               {liveCount > 0 && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {liveCount} LIVE
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-[#7E888B] mt-0.5">
-              Premier Football Companion
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-[10px] text-[#64748B] font-medium">
+                {isLiveSource ? "ESPN Realtime" : "Match Companion"}
+              </span>
+              {isLiveSource && (
+                <span className="w-1 h-1 rounded-full bg-emerald-500" />
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Actions */}
         <div className="flex items-center gap-1">
-          {/* Search Toggle Button */}
           <button
             onClick={() => {
               setShowSearch((prev) => !prev);
               if (showSearch) onSearchChange("");
             }}
             aria-label="Search fixtures"
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+            className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
               showSearch || searchQuery
-                ? "bg-emerald-500/20 text-emerald-400"
-                : "text-[#8B9598] hover:text-white hover:bg-[#1A1F22]"
+                ? "bg-blue-600/20 text-blue-400"
+                : "text-[#94A3B8] hover:text-white hover:bg-[#161C26]"
             }`}
-            title="Search fixtures"
+            title="Search teams or leagues"
           >
             <svg
-              className="w-4 h-4"
+              className="w-3.5 h-3.5"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -87,16 +95,15 @@ export const Header: React.FC<HeaderProps> = ({
             </svg>
           </button>
 
-          {/* Refresh Scores Button */}
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            aria-label="Refresh scores"
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8B9598] hover:text-white hover:bg-[#1A1F22] active:scale-95 transition-all disabled:opacity-50"
-            title="Refresh scores"
+            aria-label="Refresh live scores"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-[#94A3B8] hover:text-white hover:bg-[#161C26] active:scale-95 transition-all disabled:opacity-50"
+            title="Refresh live scores"
           >
             <svg
-              className={`w-4 h-4 ${isRefreshing ? "animate-spin text-emerald-400" : ""}`}
+              className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-400" : ""}`}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -113,21 +120,21 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Expandable Search Input */}
+      {/* Search Input Drawer */}
       {showSearch && (
         <div className="relative animate-in fade-in duration-150">
           <input
             type="text"
-            placeholder="Search teams or leagues (e.g. Madrid, Arsenal)..."
+            placeholder="Search teams or competitions..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             autoFocus
-            className="w-full bg-[#14181B] border border-[#262D30] focus:border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-white placeholder-[#687478] focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+            className="w-full bg-[#12161F] border border-[#232B39] focus:border-blue-500 rounded-lg px-3 py-1.5 text-xs text-white placeholder-[#64748B] focus:outline-none focus:ring-1 focus:ring-blue-500/40"
           />
           {searchQuery && (
             <button
               onClick={() => onSearchChange("")}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#717E82] hover:text-white"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#64748B] hover:text-white"
             >
               ✕
             </button>

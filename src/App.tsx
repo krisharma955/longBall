@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { leagues as initialLeagues, matches as initialMatches } from "./data/matches";
 import type { Match, League } from "./types/football";
+import { fetchLiveFootballData } from "./services/footballApi";
 import { Header } from "./components/Header";
 import { FilterTabs, type FilterTab } from "./components/FilterTabs";
 import { MatchFeed } from "./components/MatchFeed";
@@ -13,32 +14,43 @@ const App = () => {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLiveSource, setIsLiveSource] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-  // Live simulation: advance minutes on live matches periodically
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setMatchesList((prev) =>
-        prev.map((match) => {
-          if (match.status === "LIVE" && match.minute !== null && match.minute < 90) {
-            return {
-              ...match,
-              minute: match.minute + 1,
-            };
-          }
-          return match;
-        })
-      );
-    }, 45000); // Ticks every 45s
-
-    return () => clearInterval(timer);
+  // Real-time football data fetcher
+  const loadData = useCallback(async (isManual = false) => {
+    if (isManual) setIsRefreshing(true);
+    try {
+      const data = await fetchLiveFootballData();
+      if (data.matches.length > 0) {
+        setMatchesList(data.matches);
+        setLeaguesList(data.leagues);
+        setIsLiveSource(data.isLiveSource);
+      }
+    } catch (err) {
+      console.warn("Error refreshing live data:", err);
+    } finally {
+      if (isManual) {
+        setTimeout(() => setIsRefreshing(false), 500);
+      }
+    }
   }, []);
 
+  // Initial load
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Periodic polling for live scores every 60 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadData(false);
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
   const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 500);
+    loadData(true);
   };
 
   const handleTogglePin = (leagueId: string) => {
@@ -47,16 +59,16 @@ const App = () => {
     );
   };
 
-  // Keep selectedMatch updated if live state ticks
+  // Keep selectedMatch updated with the latest live score if open
   const activeSelectedMatch = selectedMatch
     ? matchesList.find((m) => m.id === selectedMatch.id) || selectedMatch
     : null;
 
-  // Filter by tab + search query
+  // Filter matches by tab & search query
   const filteredMatches = matchesList.filter((match) => {
     const league = leaguesList.find((l) => l.id === match.leagueId);
 
-    // Search filter
+    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchesSearch =
@@ -68,7 +80,7 @@ const App = () => {
       if (!matchesSearch) return false;
     }
 
-    // Tab filter
+    // Active tab filter
     if (activeTab === "all") return true;
     if (activeTab === "live") {
       return match.status === "LIVE" || match.status === "HALFTIME";
@@ -93,7 +105,7 @@ const App = () => {
   };
 
   return (
-    <main className="w-full max-w-md mx-auto h-screen bg-[#0B0E10] text-[#E8ECE9] flex flex-col overflow-hidden font-sans border-x border-[#1C2124] shadow-2xl relative select-none">
+    <main className="w-full max-w-md mx-auto h-screen bg-[#0C0E12] text-[#E2E8F0] flex flex-col overflow-hidden font-sans border-x border-[#1A202C] shadow-2xl relative select-none">
       {activeSelectedMatch ? (
         <MatchDetailsPanel
           match={activeSelectedMatch}
@@ -106,6 +118,7 @@ const App = () => {
           <Header
             liveCount={counts.live}
             isRefreshing={isRefreshing}
+            isLiveSource={isLiveSource}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             onRefresh={handleRefresh}
@@ -119,7 +132,7 @@ const App = () => {
           />
 
           {/* Main Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-3.5 pb-4 scrollbar-thin scrollbar-thumb-[#20272B] scrollbar-track-transparent">
+          <div className="flex-1 overflow-y-auto px-3 pb-3 scrollbar-thin scrollbar-thumb-[#1F2634] scrollbar-track-transparent">
             {filteredMatches.length === 0 ? (
               <EmptyState
                 filter={activeTab}

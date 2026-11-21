@@ -27,11 +27,11 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
     .filter((group) => group.matches.length > 0);
 
   return (
-    <div className="flex flex-col gap-4 pt-1">
+    <div className="flex flex-col gap-3.5 pt-1">
       {groupedMatches.map(({ league, matches }) => (
         <section key={league.id} className="flex flex-col">
-          {/* Sticky League Section Header */}
-          <div className="flex items-center justify-between px-1 py-1.5 mb-1.5 text-xs text-[#828F93] font-medium border-b border-[#1A2023]/60">
+          {/* League Section Header */}
+          <div className="flex items-center justify-between px-1 py-1.5 mb-1.5 text-xs text-[#94A3B8] font-medium border-b border-[#181E29]">
             <div className="flex items-center gap-2 min-w-0">
               {league.logo ? (
                 <img
@@ -40,18 +40,18 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
                   className="w-4 h-4 object-contain shrink-0"
                 />
               ) : (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
               )}
-              <span className="font-semibold text-[#D2DCD9] truncate">
+              <span className="font-bold text-white tracking-tight truncate text-[11px]">
                 {league.name}
               </span>
-              <span className="text-[10px] text-[#5A666A] hidden xs:inline">
-                ({league.country})
+              <span className="text-[10px] text-[#475569] hidden xs:inline">
+                • {league.country}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-[#5D6B6F] px-1.5 py-0.5 rounded bg-[#131719]">
+              <span className="text-[10px] font-mono text-[#64748B] px-1.5 py-0.2 rounded bg-[#131720]">
                 {matches.length}
               </span>
               <button
@@ -63,9 +63,9 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
                 className={`p-1 rounded transition-colors ${
                   league.pinned
                     ? "text-amber-400 hover:text-amber-300"
-                    : "text-[#495458] hover:text-[#8D9B9F]"
+                    : "text-[#475569] hover:text-[#94A3B8]"
                 }`}
-                title={league.pinned ? "Unpin league" : "Pin league to top"}
+                title={league.pinned ? "Unpin league" : "Pin league"}
                 aria-label={league.pinned ? "Unpin league" : "Pin league"}
               >
                 <svg
@@ -84,7 +84,7 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
             </div>
           </div>
 
-          {/* Matches in League */}
+          {/* Match cards */}
           <div className="flex flex-col">
             {matches.map((match) => (
               <MatchCard
