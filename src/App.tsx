@@ -1,12 +1,14 @@
 import { useState } from "react";
-import { leagues, matches } from "./data/matches";
-import type { Match } from "./types/football";
+import { leagues as initialLeagues, matches as initialMatches } from "./data/matches";
+import type { Match, League } from "./types/football";
 import { Header } from "./components/Header";
 import { FilterTabs, type FilterTab } from "./components/FilterTabs";
-import { MatchCard } from "./components/MatchCard";
+import { MatchFeed } from "./components/MatchFeed";
 import { EmptyState } from "./components/EmptyState";
 
 const App = () => {
+  const [leaguesList, setLeaguesList] = useState<League[]>(initialLeagues);
+  const [matchesList] = useState<Match[]>(initialMatches);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -18,21 +20,27 @@ const App = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-    }, 600);
+    }, 500);
+  };
+
+  const handleTogglePin = (leagueId: string) => {
+    setLeaguesList((prev) =>
+      prev.map((l) => (l.id === leagueId ? { ...l, pinned: !l.pinned } : l))
+    );
   };
 
   const counts = {
-    all: matches.length,
-    live: matches.filter((m) => m.status === "LIVE" || m.status === "HALFTIME").length,
-    finished: matches.filter((m) => m.status === "FINISHED").length,
-    upcoming: matches.filter((m) => m.status === "UPCOMING").length,
-    pinned: matches.filter((m) => {
-      const l = leagues.find((league) => league.id === m.leagueId);
+    all: matchesList.length,
+    live: matchesList.filter((m) => m.status === "LIVE" || m.status === "HALFTIME").length,
+    finished: matchesList.filter((m) => m.status === "FINISHED").length,
+    upcoming: matchesList.filter((m) => m.status === "UPCOMING").length,
+    pinned: matchesList.filter((m) => {
+      const l = leaguesList.find((league) => league.id === m.leagueId);
       return l?.pinned === true;
     }).length,
   };
 
-  const filteredMatches = matches.filter((match) => {
+  const filteredMatches = matchesList.filter((match) => {
     if (activeTab === "all") return true;
     if (activeTab === "live") {
       return match.status === "LIVE" || match.status === "HALFTIME";
@@ -40,7 +48,7 @@ const App = () => {
     if (activeTab === "finished") return match.status === "FINISHED";
     if (activeTab === "upcoming") return match.status === "UPCOMING";
     if (activeTab === "pinned") {
-      const league = leagues.find((l) => l.id === match.leagueId);
+      const league = leaguesList.find((l) => l.id === match.leagueId);
       return league?.pinned === true;
     }
     return true;
@@ -67,16 +75,12 @@ const App = () => {
         {filteredMatches.length === 0 ? (
           <EmptyState filter={activeTab} onReset={() => setActiveTab("all")} />
         ) : (
-          <div className="pt-1">
-            {filteredMatches.map((match) => (
-              <MatchCard
-                key={match.id}
-                match={match}
-                league={leagues.find((l) => l.id === match.leagueId)}
-                onClick={(m) => setSelectedMatch(m)}
-              />
-            ))}
-          </div>
+          <MatchFeed
+            matches={filteredMatches}
+            leagues={leaguesList}
+            onSelectMatch={(m) => setSelectedMatch(m)}
+            onTogglePinLeague={handleTogglePin}
+          />
         )}
       </div>
     </main>
