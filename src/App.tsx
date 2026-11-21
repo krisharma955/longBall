@@ -135,71 +135,75 @@ const App = () => {
   ).length;
 
   return (
-    <main className="w-full h-screen bg-[#050606] text-[#F5F6F6] flex flex-col overflow-hidden font-sans relative select-none">
-      {activeSelectedMatch ? (
-        <MatchDetailsPanel
-          match={activeSelectedMatch}
-          league={leaguesList.find((l) => l.id === activeSelectedMatch.leagueId)}
-          onBack={() => setSelectedMatch(null)}
-        />
-      ) : (
-        <>
-          {/* Header */}
-          <Header
-            liveCount={liveCount}
-            favoritesCount={favorites.size}
-            showOnlyFavorites={showOnlyFavorites}
-            onToggleFavoritesOnly={() => setShowOnlyFavorites((p) => !p)}
-            isRefreshing={isRefreshing}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onRefresh={handleRefresh}
+    // Outer shell: when previewed in full browser tab, docks sidebar cleanly to right side (exact browser side panel position!)
+    <div className="w-full h-screen bg-[#000000] flex justify-end overflow-hidden">
+      {/* Sidebar Extension Viewport (Exact 380px sidebar width) */}
+      <main className="w-full sm:w-[380px] h-screen bg-[#050606] text-[#F5F6F6] flex flex-col overflow-hidden font-sans relative select-none sm:border-l border-[rgba(255,255,255,0.08)] shadow-2xl">
+        {activeSelectedMatch ? (
+          <MatchDetailsPanel
+            match={activeSelectedMatch}
+            league={leaguesList.find((l) => l.id === activeSelectedMatch.leagueId)}
+            onBack={() => setSelectedMatch(null)}
           />
+        ) : (
+          <>
+            {/* Header */}
+            <Header
+              liveCount={liveCount}
+              favoritesCount={favorites.size}
+              showOnlyFavorites={showOnlyFavorites}
+              onToggleFavoritesOnly={() => setShowOnlyFavorites((p) => !p)}
+              isRefreshing={isRefreshing}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onRefresh={handleRefresh}
+            />
 
-          {/* 3-Way Segmented Date Navigation */}
-          <DateNav
-            activeDate={activeDateTab}
-            onDateChange={setActiveDateTab}
-          />
+            {/* 3-Way Segmented Date Navigation */}
+            <DateNav
+              activeDate={activeDateTab}
+              onDateChange={setActiveDateTab}
+            />
 
-          {/* Main Scrollable Feed */}
-          <div className="flex-1 overflow-y-auto px-3.5 pb-4 scrollbar-thin">
-            {isLoading ? (
-              // Clean Loading Skeletons
-              <div className="flex flex-col gap-2.5 pt-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-24 rounded-[20px] bg-[#171919] border border-[rgba(255,255,255,0.06)] animate-pulse flex items-center px-4 justify-between"
-                  >
-                    <div className="w-12 h-12 bg-[#252727] rounded-full" />
-                    <div className="w-16 h-7 bg-[#252727] rounded" />
-                    <div className="w-12 h-12 bg-[#252727] rounded-full" />
-                  </div>
-                ))}
-              </div>
-            ) : filteredMatches.length === 0 ? (
-              <EmptyState
-                filter={activeDateTab === "upcoming" ? "upcoming" : activeDateTab === "yesterday" ? "finished" : "all"}
-                onReset={() => {
-                  setActiveDateTab("today");
-                  setShowOnlyFavorites(false);
-                  setSearchQuery("");
-                }}
-              />
-            ) : (
-              <MatchFeed
-                matches={filteredMatches}
-                leagues={leaguesList}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                onSelectMatch={handleSelectMatch}
-              />
-            )}
-          </div>
-        </>
-      )}
-    </main>
+            {/* Main Scrollable Feed */}
+            <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-thin">
+              {isLoading ? (
+                // Clean Loading Skeletons
+                <div className="flex flex-col gap-2.5 pt-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="h-[108px] rounded-[20px] bg-[#171919] border border-[rgba(255,255,255,0.06)] animate-pulse flex items-center px-4 justify-between"
+                    >
+                      <div className="w-10 h-10 bg-[#252727] rounded-full" />
+                      <div className="w-20 h-8 bg-[#252727] rounded" />
+                      <div className="w-10 h-10 bg-[#252727] rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredMatches.length === 0 ? (
+                <EmptyState
+                  filter={activeDateTab === "upcoming" ? "upcoming" : activeDateTab === "yesterday" ? "finished" : "all"}
+                  onReset={() => {
+                    setActiveDateTab("today");
+                    setShowOnlyFavorites(false);
+                    setSearchQuery("");
+                  }}
+                />
+              ) : (
+                <MatchFeed
+                  matches={filteredMatches}
+                  leagues={leaguesList}
+                  favorites={favorites}
+                  onToggleFavorite={handleToggleFavorite}
+                  onSelectMatch={handleSelectMatch}
+                />
+              )}
+            </div>
+          </>
+        )}
+      </main>
+    </div>
   );
 };
 
