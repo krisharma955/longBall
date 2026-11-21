@@ -1,0 +1,4 @@
+// Chrome Extension Service Worker for longBall Sidebar
+chrome.sidePanel
+  ?.setPanelBehavior({ openPanelOnActionClick: true })
+  ?.catch((error) => console.error("Error setting panel behavior:", error));

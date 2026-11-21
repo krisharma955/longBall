@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "longBall - Football Companion",
+  "version": "1.0.0",
+  "description": "Next-gen football sidebar companion with live scores, match stats, lineups, and fixtures.",
+  "action": {
+    "default_title": "Open longBall Sidebar"
+  },
+  "side_panel": {
+    "default_path": "index.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "sidePanel"
+  ],
+  "icons": {
+    "16": "favicon.svg",
+    "48": "favicon.svg",
+    "128": "favicon.svg"
+  }
+}
