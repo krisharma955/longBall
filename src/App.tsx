@@ -5,6 +5,7 @@ import { Header } from "./components/Header";
 import { FilterTabs, type FilterTab } from "./components/FilterTabs";
 import { MatchFeed } from "./components/MatchFeed";
 import { EmptyState } from "./components/EmptyState";
+import { MatchDetailsPanel } from "./components/MatchDetailsPanel";
 
 const App = () => {
   const [leaguesList, setLeaguesList] = useState<League[]>(initialLeagues);
@@ -12,9 +13,6 @@ const App = () => {
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-
-  // In Phase 3, this will display the full MatchDetailsPanel
-  void selectedMatch;
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -55,34 +53,47 @@ const App = () => {
   });
 
   return (
-    <main className="w-full max-w-md mx-auto h-screen bg-[#0B0E10] text-[#E8ECE9] flex flex-col overflow-hidden font-sans border-x border-[#1C2124] shadow-2xl">
-      {/* Top Header */}
-      <Header
-        liveCount={counts.live}
-        isRefreshing={isRefreshing}
-        onRefresh={handleRefresh}
-      />
-
-      {/* Filter Tabs */}
-      <FilterTabs
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        counts={counts}
-      />
-
-      {/* Main Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-3.5 pb-4 scrollbar-thin scrollbar-thumb-[#20272B] scrollbar-track-transparent">
-        {filteredMatches.length === 0 ? (
-          <EmptyState filter={activeTab} onReset={() => setActiveTab("all")} />
-        ) : (
-          <MatchFeed
-            matches={filteredMatches}
-            leagues={leaguesList}
-            onSelectMatch={(m) => setSelectedMatch(m)}
-            onTogglePinLeague={handleTogglePin}
+    <main className="w-full max-w-md mx-auto h-screen bg-[#0B0E10] text-[#E8ECE9] flex flex-col overflow-hidden font-sans border-x border-[#1C2124] shadow-2xl relative select-none">
+      {selectedMatch ? (
+        <MatchDetailsPanel
+          match={selectedMatch}
+          league={leaguesList.find((l) => l.id === selectedMatch.leagueId)}
+          onBack={() => setSelectedMatch(null)}
+        />
+      ) : (
+        <>
+          {/* Top Header */}
+          <Header
+            liveCount={counts.live}
+            isRefreshing={isRefreshing}
+            onRefresh={handleRefresh}
           />
-        )}
-      </div>
+
+          {/* Filter Tabs */}
+          <FilterTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            counts={counts}
+          />
+
+          {/* Main Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-3.5 pb-4 scrollbar-thin scrollbar-thumb-[#20272B] scrollbar-track-transparent">
+            {filteredMatches.length === 0 ? (
+              <EmptyState
+                filter={activeTab}
+                onReset={() => setActiveTab("all")}
+              />
+            ) : (
+              <MatchFeed
+                matches={filteredMatches}
+                leagues={leaguesList}
+                onSelectMatch={(m) => setSelectedMatch(m)}
+                onTogglePinLeague={handleTogglePin}
+              />
+            )}
+          </div>
+        </>
+      )}
     </main>
   );
 };
