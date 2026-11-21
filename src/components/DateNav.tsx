@@ -17,18 +17,21 @@ export const DateNav: React.FC<DateNavProps> = ({
   ];
 
   return (
-    <div className="px-3.5 pt-2 pb-1.5">
-      <div className="grid grid-cols-3 bg-[#171919] p-1 rounded-xl border border-[rgba(255,255,255,0.06)]">
+    <nav
+      aria-label="Match Date Filter"
+      className="px-4 pt-3 pb-2 shrink-0"
+    >
+      <div className="grid grid-cols-3 bg-[#171919] p-1 rounded-[12px] border border-[rgba(255,255,255,0.06)]">
         {tabs.map((tab) => {
           const isActive = activeDate === tab.id;
           return (
             <button
               key={tab.id}
               onClick={() => onDateChange(tab.id)}
-              className={`py-1.5 text-xs font-semibold rounded-lg transition-all duration-150 text-center ${
+              className={`py-1.5 text-[13px] font-medium rounded-[9px] transition-all duration-140 text-center select-none ${
                 isActive
-                  ? "bg-[#252727] text-[#F5F6F6] shadow-sm"
-                  : "text-[#A2A7A7] hover:text-white"
+                  ? "bg-[#252727] text-[#F5F6F6] shadow-sm font-semibold"
+                  : "text-[#A2A7A7] hover:text-[#F5F6F6]"
               }`}
             >
               {tab.label}
@@ -36,6 +39,6 @@ export const DateNav: React.FC<DateNavProps> = ({
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };

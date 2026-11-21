@@ -33,28 +33,28 @@ export const MatchCard: React.FC<MatchCardProps> = ({
           onClick(match);
         }
       }}
-      className="group bg-[#171919] hover:bg-[#202222] border border-[rgba(255,255,255,0.06)] rounded-[20px] p-3.5 mb-2.5 cursor-pointer transition-all duration-150 active:scale-[0.99] focus:outline-none focus:ring-1 focus:ring-[#18B86A]/40 flex flex-col justify-between"
+      className="group relative bg-[#171919] hover:bg-[#202222] border border-[rgba(255,255,255,0.06)] rounded-[20px] p-3.5 mb-2.5 cursor-pointer transition-all duration-150 ease-out active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#18B86A]/50 flex flex-col justify-between min-h-[104px]"
     >
-      {/* Top Metadata Row: Competition & Favorite Toggle */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-medium text-[#A2A7A7] truncate">
+      {/* Top Metadata Row: Competition + Favorite Star */}
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[11px] font-medium text-[#A2A7A7] truncate max-w-[85%]">
           {league?.name || "Football"}
         </span>
 
-        {/* Favorite Star (Independent Click Target) */}
+        {/* Favorite Affordance (Independent click target, Section 10) */}
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onToggleFavorite(match.id);
           }}
-          className={`p-1 -mr-1 rounded-md transition-colors ${
+          className={`w-6 h-6 -mr-1 rounded-md flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#18B86A] ${
             isFavorite
               ? "text-[#18B86A]"
               : "text-[#727878] hover:text-[#F5F6F6]"
           }`}
           title={isFavorite ? "Remove favorite" : "Add to favorites"}
-          aria-label={isFavorite ? "Remove favorite" : "Add to favorites"}
+          aria-label={isFavorite ? `Remove ${match.homeTeam.shortName} vs ${match.awayTeam.shortName} from favorites` : `Favorite ${match.homeTeam.shortName} vs ${match.awayTeam.shortName}`}
         >
           <svg
             className={`w-3.5 h-3.5 ${isFavorite ? "fill-[#18B86A]" : "fill-none"}`}
@@ -69,7 +69,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         </button>
       </div>
 
-      {/* Center Matchup Area: Home - Score/Status - Away */}
+      {/* Matchup Center: Home Team - Score/Time - Away Team */}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
         {/* Home Team */}
         <div className="flex flex-col items-center text-center min-w-0">
@@ -78,9 +78,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({
             name={match.homeTeam.name}
             shortName={match.homeTeam.shortName}
             size="md"
-            className="mb-1.5"
+            className="mb-1"
           />
-          <span className="text-xs font-medium text-[#F5F6F6] truncate w-full" title={match.homeTeam.name}>
+          <span
+            className="text-[13px] font-medium text-[#F5F6F6] truncate w-full"
+            title={match.homeTeam.name}
+          >
             {match.homeTeam.name}
           </span>
         </div>
@@ -89,16 +92,16 @@ export const MatchCard: React.FC<MatchCardProps> = ({
         <div className="flex flex-col items-center justify-center min-w-[76px] px-1 text-center">
           {isUpcoming ? (
             <div className="flex flex-col items-center">
-              <span className="text-[13px] font-semibold text-[#F5F6F6] tracking-tight">
+              <span className="text-[14px] font-semibold text-[#F5F6F6] tracking-tight">
                 {match.kickoffTime || "TBD"}
               </span>
-              <span className="text-[10px] text-[#727878] font-medium mt-0.5">
+              <span className="text-[11px] text-[#727878] font-medium mt-0.5">
                 {match.date || "Scheduled"}
               </span>
             </div>
           ) : (
             <div className="flex flex-col items-center">
-              <div className="flex items-center gap-1.5 font-mono text-[28px] font-bold tracking-tight text-[#F5F6F6] leading-none">
+              <div className="flex items-center gap-1.5 font-mono text-[30px] font-bold tabular-nums tracking-tight text-[#F5F6F6] leading-none">
                 <span>{match.homeScore}</span>
                 <span className="text-base text-[#727878] font-normal">-</span>
                 <span>{match.awayScore}</span>
@@ -107,13 +110,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({
               {/* Status / Clock */}
               <div className="mt-1 flex items-center gap-1">
                 {isLive && (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#18B86A]">
+                  <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#18B86A]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#18B86A] animate-pulse" />
                     {match.minute ? `${match.minute}'` : "LIVE"}
                   </span>
                 )}
                 {isHalftime && (
-                  <span className="text-[11px] font-semibold text-amber-400">
+                  <span className="text-[12px] font-semibold text-amber-400">
                     HT
                   </span>
                 )}
@@ -134,9 +137,12 @@ export const MatchCard: React.FC<MatchCardProps> = ({
             name={match.awayTeam.name}
             shortName={match.awayTeam.shortName}
             size="md"
-            className="mb-1.5"
+            className="mb-1"
           />
-          <span className="text-xs font-medium text-[#F5F6F6] truncate w-full" title={match.awayTeam.name}>
+          <span
+            className="text-[13px] font-medium text-[#F5F6F6] truncate w-full"
+            title={match.awayTeam.name}
+          >
             {match.awayTeam.name}
           </span>
         </div>

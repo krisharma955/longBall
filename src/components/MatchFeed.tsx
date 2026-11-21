@@ -19,16 +19,16 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
 }) => {
   const [upcomingExpanded, setUpcomingExpanded] = useState(true);
 
-  // Partition matches into Live, Upcoming, and Finished
+  // Partition matches into Live, Later Today / Upcoming, and Finished / Past
   const liveMatches = matches.filter((m) => m.status === "LIVE" || m.status === "HALFTIME");
   const upcomingMatches = matches.filter((m) => m.status === "UPCOMING");
   const finishedMatches = matches.filter((m) => m.status === "FINISHED" || m.status === "POSTPONED" || m.status === "CANCELLED");
 
   return (
-    <div className="flex flex-col gap-3 pt-1">
-      {/* 1. Live Matches Section */}
+    <div className="flex flex-col pt-1">
+      {/* 1. Live Matches Section (Top Priority) */}
       {liveMatches.length > 0 && (
-        <section className="flex flex-col">
+        <section className="flex flex-col mb-4">
           <div className="flex items-center justify-between px-1 mb-2">
             <span className="text-[11px] font-bold text-[#18B86A] uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#18B86A] animate-pulse" />
@@ -48,21 +48,22 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
         </section>
       )}
 
-      {/* 2. Upcoming / Later Today Section (Collapsible with chevron) */}
+      {/* 2. Later Today / Upcoming Section (Collapsible with chevron, Section 9) */}
       {upcomingMatches.length > 0 && (
-        <section className="flex flex-col">
+        <section className="flex flex-col mb-4">
           <button
             type="button"
             onClick={() => setUpcomingExpanded((prev) => !prev)}
-            className="flex items-center justify-between px-1 mb-2 text-left w-full group py-1"
-            aria-label={upcomingExpanded ? "Show fewer upcoming matches" : "Show more upcoming matches"}
+            className="flex items-center justify-between px-1 mb-2.5 text-left w-full group py-1 select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#18B86A]"
+            aria-label={upcomingExpanded ? "Show fewer matches" : "Show more matches"}
+            aria-expanded={upcomingExpanded}
           >
-            <span className="text-[11px] font-bold text-[#A2A7A7] uppercase tracking-wider group-hover:text-white transition-colors">
+            <span className="text-[11px] font-bold text-[#A2A7A7] uppercase tracking-wider group-hover:text-[#F5F6F6] transition-colors">
               Later Today ({upcomingMatches.length})
             </span>
-            <div className="flex items-center gap-1 text-[#727878] group-hover:text-white transition-colors text-xs">
-              <span className="text-[10px] font-medium">
-                {upcomingExpanded ? "Hide" : "Show all"}
+            <div className="flex items-center gap-1 text-[#727878] group-hover:text-[#F5F6F6] transition-colors text-xs">
+              <span className="text-[11px] font-medium">
+                {upcomingExpanded ? "Fewer" : "Show all"}
               </span>
               <svg
                 className={`w-3.5 h-3.5 transition-transform duration-200 ${upcomingExpanded ? "rotate-180" : ""}`}
@@ -95,10 +96,10 @@ export const MatchFeed: React.FC<MatchFeedProps> = ({
         </section>
       )}
 
-      {/* 3. Finished Matches Section */}
+      {/* 3. Finished Matches / Results */}
       {finishedMatches.length > 0 && (
-        <section className="flex flex-col">
-          <div className="flex items-center justify-between px-1 mb-2">
+        <section className="flex flex-col mb-4">
+          <div className="flex items-center justify-between px-1 mb-2.5">
             <span className="text-[11px] font-bold text-[#727878] uppercase tracking-wider">
               Recent Results ({finishedMatches.length})
             </span>

@@ -8,14 +8,14 @@ interface MatchDetailsPanelProps {
   onBack: () => void;
 }
 
-type DetailTab = "timeline" | "stats" | "lineups" | "info";
+type DetailTab = "events" | "stats" | "lineups" | "info";
 
 export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
   match,
   league,
   onBack,
 }) => {
-  const [activeTab, setActiveTab] = useState<DetailTab>("timeline");
+  const [activeTab, setActiveTab] = useState<DetailTab>("events");
 
   const isLive = match.status === "LIVE";
   const isHalftime = match.status === "HALFTIME";
@@ -27,12 +27,12 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
   const lineups = match.lineups;
 
   return (
-    <div className="flex flex-col h-full bg-[#050606] text-[#F5F6F6] animate-in fade-in slide-in-from-right-3 duration-150">
-      {/* Top Header / Back Affordance */}
-      <div className="flex items-center justify-between px-3.5 py-3 border-b border-[rgba(255,255,255,0.06)] bg-[#050606] sticky top-0 z-20">
+    <div className="flex flex-col h-full bg-[#050606] text-[#F5F6F6] animate-in fade-in slide-in-from-right-2 duration-150 ease-out">
+      {/* Top Header / Back Affordance (Section 11) */}
+      <div className="h-[56px] px-4 border-b border-[rgba(255,255,255,0.06)] bg-[#050606] flex items-center justify-between shrink-0 sticky top-0 z-20">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-semibold text-[#A2A7A7] hover:text-[#F5F6F6] hover:bg-[#171919] transition-all active:scale-95"
+          className="flex items-center gap-1.5 px-2 py-1 -ml-2 rounded-[12px] text-xs font-semibold text-[#A2A7A7] hover:text-[#F5F6F6] hover:bg-[#171919] transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#18B86A]"
           aria-label="Back to match list"
         >
           <svg
@@ -49,13 +49,13 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
           <span>Matches</span>
         </button>
 
-        <span className="text-xs font-bold text-[#F5F6F6] truncate max-w-[170px]">
+        <span className="text-xs font-bold text-[#F5F6F6] truncate max-w-[170px] text-center">
           {league?.name || "Match Center"}
         </span>
 
         <div className="w-14 flex justify-end">
           {isLive && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#18B86A]/15 text-[#18B86A] border border-[#18B86A]/25">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[#18B86A]/15 text-[#18B86A] border border-[#18B86A]/25">
               <span className="w-1.5 h-1.5 rounded-full bg-[#18B86A] animate-pulse" />
               {match.minute ? `${match.minute}'` : "LIVE"}
             </span>
@@ -79,18 +79,18 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
       </div>
 
       {/* Main Content Scroll Area */}
-      <div className="flex-1 overflow-y-auto px-3.5 pb-6 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-thin">
         {/* Scoreboard Hero Card */}
         <div className="mt-3 bg-[#171919] border border-[rgba(255,255,255,0.06)] rounded-[20px] p-4 shadow-lg">
           <div className="text-center mb-3">
-            <span className="text-[10px] font-semibold text-[#727878] uppercase tracking-wider">
-              {match.round || "Fixture Details"}
+            <span className="text-[11px] font-medium text-[#727878] uppercase tracking-wider">
+              {match.round || "Match Details"}
             </span>
           </div>
 
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
             {/* Home Team */}
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center min-w-0">
               <TeamCrest
                 src={match.homeTeam.logo}
                 name={match.homeTeam.name}
@@ -98,34 +98,34 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
                 size="lg"
                 className="mb-1.5"
               />
-              <span className="text-xs font-semibold text-[#F5F6F6] line-clamp-1">
+              <span className="text-[13px] font-semibold text-[#F5F6F6] line-clamp-1">
                 {match.homeTeam.name}
               </span>
             </div>
 
             {/* Score & Live Time */}
-            <div className="flex flex-col items-center justify-center min-w-[80px] px-2">
+            <div className="flex flex-col items-center justify-center min-w-[84px] px-2">
               {isUpcoming ? (
                 <div className="flex flex-col items-center">
                   <span className="text-xs font-bold text-[#727878] tracking-widest uppercase">
                     VS
                   </span>
-                  <span className="text-sm font-bold text-[#F5F6F6] mt-1">
+                  <span className="text-base font-bold text-[#F5F6F6] mt-1">
                     {match.kickoffTime}
                   </span>
-                  <span className="text-[10px] text-[#727878] mt-0.5">
+                  <span className="text-[11px] text-[#727878] mt-0.5">
                     {match.date || "Today"}
                   </span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-2 font-mono text-3xl font-extrabold tracking-tight text-[#F5F6F6]">
+                  <div className="flex items-center gap-2 font-mono text-[34px] font-bold tabular-nums tracking-tight text-[#F5F6F6] leading-none">
                     <span>{match.homeScore}</span>
                     <span className="text-base text-[#727878] font-normal">-</span>
                     <span>{match.awayScore}</span>
                   </div>
 
-                  <span className="text-[11px] font-semibold text-[#18B86A] mt-1">
+                  <span className="text-[11px] font-semibold text-[#18B86A] mt-1.5">
                     {isLive
                       ? `${match.minute}' Playing`
                       : isHalftime
@@ -137,7 +137,7 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
             </div>
 
             {/* Away Team */}
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center min-w-0">
               <TeamCrest
                 src={match.awayTeam.logo}
                 name={match.awayTeam.name}
@@ -145,7 +145,7 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
                 size="lg"
                 className="mb-1.5"
               />
-              <span className="text-xs font-semibold text-[#F5F6F6] line-clamp-1">
+              <span className="text-[13px] font-semibold text-[#F5F6F6] line-clamp-1">
                 {match.awayTeam.name}
               </span>
             </div>
@@ -170,19 +170,19 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
           )}
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs (Section 11) */}
         <div className="flex items-center justify-around mt-3.5 mb-3 border-b border-[rgba(255,255,255,0.06)] text-xs font-medium">
-          {(["timeline", "stats", "lineups", "info"] as DetailTab[]).map((tab) => (
+          {(["events", "stats", "lineups", "info"] as DetailTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-2 px-2 capitalize relative transition-colors ${
                 activeTab === tab
-                  ? "text-[#18B86A] font-bold"
+                  ? "text-[#18B86A] font-semibold"
                   : "text-[#727878] hover:text-[#F5F6F6]"
               }`}
             >
-              {tab === "timeline" ? "Events" : tab === "stats" ? "Stats" : tab === "lineups" ? "Lineups" : "Info"}
+              {tab === "events" ? "Overview" : tab === "stats" ? "Stats" : tab === "lineups" ? "Lineups" : "Info"}
               {activeTab === tab && (
                 <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#18B86A] rounded-full" />
               )}
@@ -190,27 +190,27 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
           ))}
         </div>
 
-        {/* Tab 1: Real Events / Timeline */}
-        {activeTab === "timeline" && (
+        {/* Tab 1: Match Events */}
+        {activeTab === "events" && (
           <div className="py-1">
             {events.length === 0 ? (
               <div className="py-10 text-center text-xs text-[#727878]">
                 {isUpcoming
-                  ? "Match events will appear here in real time once kickoff begins."
-                  : "No major match incidents recorded."}
+                  ? "Match events will update live once kickoff begins."
+                  : "No incidents recorded for this fixture."}
               </div>
             ) : (
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2">
                 {events.map((event) => {
                   const isHome = event.teamId === match.homeTeam.id;
                   return (
                     <div
                       key={event.id}
-                      className="p-2.5 rounded-xl bg-[#171919] border border-[rgba(255,255,255,0.06)] flex items-start justify-between gap-2"
+                      className="p-2.5 rounded-[12px] bg-[#171919] border border-[rgba(255,255,255,0.06)] flex items-start justify-between gap-2"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-[#F5F6F6] truncate">
+                          <span className="text-xs font-semibold text-[#F5F6F6] truncate">
                             {event.player}
                           </span>
                           <span className="text-[10px] text-[#727878] font-medium">
@@ -254,11 +254,11 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
           <div className="flex flex-col gap-2 py-1">
             {!stats ? (
               <div className="py-10 text-center text-xs text-[#727878]">
-                Match statistics will update live once the match begins.
+                Match statistics will become available once the fixture kicks off.
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between px-2 text-xs font-bold text-[#A2A7A7] mb-1">
+                <div className="flex items-center justify-between px-2 text-xs font-semibold text-[#A2A7A7] mb-1">
                   <span>{match.homeTeam.shortName}</span>
                   <span className="text-[10px] uppercase tracking-wider text-[#727878]">Match Stats</span>
                   <span>{match.awayTeam.shortName}</span>
@@ -283,11 +283,11 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
           <div className="flex flex-col gap-3 py-1">
             {!lineups ? (
               <div className="py-10 text-center text-xs text-[#727878]">
-                Official team lineups will be announced approximately 60 minutes prior to kickoff.
+                Official team lineups are confirmed ~60 minutes prior to kickoff.
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between p-3 rounded-xl bg-[#171919] border border-[rgba(255,255,255,0.06)] text-xs">
+                <div className="flex items-center justify-between p-3 rounded-[12px] bg-[#171919] border border-[rgba(255,255,255,0.06)] text-xs">
                   <div>
                     <span className="font-bold text-[#F5F6F6]">{match.homeTeam.shortName}</span>
                     <span className="text-[11px] text-[#18B86A] font-mono ml-2 font-bold">{lineups.home.formation}</span>
@@ -301,7 +301,7 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   {/* Home XI */}
-                  <div className="flex flex-col gap-1 p-2 rounded-xl bg-[#171919] border border-[rgba(255,255,255,0.06)]">
+                  <div className="flex flex-col gap-1 p-2 rounded-[12px] bg-[#171919] border border-[rgba(255,255,255,0.06)]">
                     <span className="text-[10px] font-bold text-[#A2A7A7] uppercase mb-1 px-1">
                       {match.homeTeam.shortName} XI
                     </span>
@@ -318,7 +318,7 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
                   </div>
 
                   {/* Away XI */}
-                  <div className="flex flex-col gap-1 p-2 rounded-xl bg-[#171919] border border-[rgba(255,255,255,0.06)]">
+                  <div className="flex flex-col gap-1 p-2 rounded-[12px] bg-[#171919] border border-[rgba(255,255,255,0.06)]">
                     <span className="text-[10px] font-bold text-[#A2A7A7] uppercase mb-1 px-1">
                       {match.awayTeam.shortName} XI
                     </span>
@@ -339,10 +339,10 @@ export const MatchDetailsPanel: React.FC<MatchDetailsPanelProps> = ({
           </div>
         )}
 
-        {/* Tab 4: Real Info */}
+        {/* Tab 4: Match Info */}
         {activeTab === "info" && (
           <div className="flex flex-col gap-2 py-1 text-xs">
-            <div className="p-3 rounded-xl bg-[#171919] border border-[rgba(255,255,255,0.06)] flex flex-col gap-2.5">
+            <div className="p-3 rounded-[12px] bg-[#171919] border border-[rgba(255,255,255,0.06)] flex flex-col gap-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[#727878]">Competition</span>
                 <span className="font-semibold text-[#F5F6F6]">{league?.name || "Tournament"}</span>
@@ -385,7 +385,7 @@ const StatBar: React.FC<{
   const homePercent = Math.max(10, Math.min(90, Math.round((home / total) * 100)));
 
   return (
-    <div className="flex flex-col gap-1 p-2 rounded-xl bg-[#171919] border border-[rgba(255,255,255,0.06)]">
+    <div className="flex flex-col gap-1 p-2 rounded-[12px] bg-[#171919] border border-[rgba(255,255,255,0.06)]">
       <div className="flex items-center justify-between text-xs">
         <span className="font-bold font-mono text-[#F5F6F6]">{home}{unit}</span>
         <span className="text-[11px] font-medium text-[#A2A7A7]">{label}</span>
